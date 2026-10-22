@@ -190,6 +190,12 @@ function Invoke-Provision {
     $setup = Join-Path $RepoRoot 'provision\setup.sh'
     if (-not (Test-Path -LiteralPath $setup)) { Write-Err "缺少装配脚本: $setup"; return $false }
 
+    # 兜底：仓库若被 Git(autocrlf) 或编辑器转成 CRLF，bash 会报 $'\r': command not found。
+    # .gitattributes 已经强制 LF，这里再就地清一遍，保证从任何来源拷来的仓库都能跑。
+    $provDir = ConvertTo-WslPath (Join-Path $RepoRoot 'provision')
+    $sedCmd = "sed -i 's/\r`$//' $provDir/*.sh $provDir/*.tpl 2>/dev/null || true"
+    & wsl.exe -d $DistroName -u root -- bash -c $sedCmd | Out-Null
+
     $wslSetup = ConvertTo-WslPath $setup
     $logDir = Join-Path $Location 'logs'
     if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Force -Path $logDir | Out-Null }

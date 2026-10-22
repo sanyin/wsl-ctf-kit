@@ -1,0 +1,21 @@
+# 统一行尾：Linux 脚本必须是 LF，否则 bash 会报 $'\r': command not found
+* text=auto eol=lf
+
+*.sh   text eol=lf
+*.tpl  text eol=lf
+*.md   text eol=lf
+*.ps1  text eol=lf
+*.psm1 text eol=lf
+*.json text eol=lf
+
+# Windows 批处理用 CRLF 更稳
+*.cmd  text eol=crlf
+*.bat  text eol=crlf
+
+# 二进制
+*.png binary
+*.ico binary
+*.tar binary
+*.gz  binary
+*.wsl binary
+*.vhdx binary
