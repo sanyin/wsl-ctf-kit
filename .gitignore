@@ -1,0 +1,17 @@
+# 缓存与临时文件
+*.tar
+*.tar.gz
+*.tar.xz
+*.wsl
+*.vhdx
+*.part
+_cache/
+logs/
+*.log
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
