@@ -8,7 +8,8 @@
 #>
 [CmdletBinding()]
 param(
-    [ValidateSet('Kali', 'Ubuntu', 'all', '')][string]$Distro = '',
+    # 发行版真实名字（如 Kali / Ubuntu-CTF）；留空或 all = 所有本工具装的发行版
+    [string]$Distro = '',
     [string]$Location = '',
     [switch]$KeepFiles,
     [switch]$Yes

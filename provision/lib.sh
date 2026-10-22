@@ -105,11 +105,11 @@ pick_mirror() {
 set_ubuntu_mirror() {
   local m="$1" comps="main restricted universe multiverse"
   local f
+  # 只改 URIs：ubuntu.sources 里可能有多个 stanza（noble / noble-security 各一段），
+  # 如果把 Suites/Components 统一改写，会出现「configured multiple times」的重复源告警。
   for f in /etc/apt/sources.list.d/ubuntu.sources /etc/apt/sources.list.d/*.sources; do
     [ -f "$f" ] || continue
     sed -i -E "s|^URIs:.*|URIs: ${m}/|" "$f"
-    sed -i -E "s|^Suites:.*|Suites: noble noble-updates noble-security noble-backports|" "$f"
-    sed -i -E "s|^Components:.*|Components: ${comps}|" "$f"
     ok "已设置 deb822 源: $f → $m"
     return 0
   done
@@ -142,6 +142,23 @@ set_kali_mirror() {
 }
 
 ensure_group() { getent group "$1" >/dev/null 2>&1 || groupadd "$1"; }
+
+# 以某个用户身份执行命令。
+# 注意：ubuntu-base 这种最小镜像里可能没有 sudo，所以优先用 runuser(util-linux)，
+# 再退 sudo，最后用 su -c。
+as_user() {
+  local u="$1"; shift
+  if have runuser; then
+    runuser -u "$u" -- "$@"
+  elif have sudo; then
+    sudo -u "$u" -- "$@"
+  else
+    local q=""
+    local arg
+    for arg in "$@"; do q+="$(printf '%q' "$arg") "; done
+    su -s /bin/sh "$u" -c "$q"
+  fi
+}
 
 ensure_user() {
   local u="$1" pw="$2" shell="${3:-/bin/bash}"

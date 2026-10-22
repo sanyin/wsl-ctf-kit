@@ -53,8 +53,17 @@ check "hashcat"   hashcat
 check "hydra"     hydra
 check "r2"        r2
 check "pwntools"  pwn
-check "msfconsole" msfconsole
-check "kex"       kex
+
+# 这些只有 Kali 有，Ubuntu 上不该报 WARN
+IS_KALI=0
+. /etc/os-release 2>/dev/null || true
+case "${ID:-}${ID_LIKE:-}" in *kali*) IS_KALI=1 ;; esac
+if [ "$IS_KALI" = "1" ]; then
+  check "msfconsole" msfconsole
+  check "kex"       kex
+else
+  echo "  [ -- ] msfconsole / kex      仅 Kali 提供，Ubuntu 跳过"
+fi
 
 # pwndbg：必须能真的 import
 if timeout 90 gdb -batch -nx -ex "source /opt/pwndbg-src/gdbinit.py" \
@@ -78,9 +87,13 @@ else
   warn "venv" "未创建"
 fi
 
-# 词表
-[ -d /usr/share/seclists ] && ok "seclists" "$(du -sh /usr/share/seclists 2>/dev/null | cut -f1)" || warn "seclists" "未安装"
-[ -d /usr/share/wordlists ] && ok "wordlists" "$(ls /usr/share/wordlists | tr '\n' ' ' | cut -c1-40)" || warn "wordlists" "未安装"
+# 词表（Kali 有 seclists；Ubuntu 上游没有）
+if [ "$IS_KALI" = "1" ]; then
+  [ -d /usr/share/seclists ] && ok "seclists" "$(du -sh /usr/share/seclists 2>/dev/null | cut -f1)" || warn "seclists" "未安装"
+  [ -d /usr/share/wordlists ] && ok "wordlists" "$(ls /usr/share/wordlists | tr '\n' ' ' | cut -c1-40)" || warn "wordlists" "未安装"
+else
+  echo "  [ -- ] seclists              Ubuntu 仓库无此包，用 Kali 里的 /usr/share/seclists"
+fi
 
 echo "----------------------------------------"
 printf '通过 \033[32m%d\033[0m / 警告 \033[33m%d\033[0m / 失败 \033[31m%d\033[0m\n' "$PASS" "$WARN" "$FAIL"

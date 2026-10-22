@@ -84,6 +84,7 @@ setup_mirrors() {
 BASE_PKGS=(
   zsh zsh-autosuggestions zsh-syntax-highlighting git curl wget ca-certificates
   gnupg build-essential pkg-config python3 python3-pip python3-venv pipx
+  sudo
   tmux htop tree jq unzip zip p7zip-full xz-utils zstd file less vim nano
   man-db locales tzdata net-tools dnsutils iputils-ping traceroute whois
   openssh-client rsync strace ltrace gdb socat
@@ -170,7 +171,8 @@ setup_python() {
   venv="$home/lab/venv"
   if [ ! -x "$venv/bin/pip" ]; then
     rm -rf "$venv"
-    sudo -u "$CTF_USER" "$py" -m venv "$venv" || { warn "venv 创建失败，跳过"; return 0; }
+    as_user "$CTF_USER" "$py" -m venv "$venv" || { warn "venv 创建失败，跳过"; return 0; }
+    chown -R "$CTF_USER:$CTF_USER" "$home/lab" 2>/dev/null || true
   fi
 
   local idx="--index-url https://pypi.tuna.tsinghua.edu.cn/simple"
@@ -202,7 +204,25 @@ setup_desktop() {
   ok "桌面已装：kex（独立窗口）/ kex --sl（seamless）"
 }
 
-# ---------------------------------------------------------------- 8. Docker（可选）
+# ---------------------------------------------------------------- 8. pwn 内核参数
+setup_sysctl() {
+  step "CTF/pwn 内核参数"
+  cat > /etc/sysctl.d/99-ctf.conf <<'EOF'
+# 由 wsl-ctf-kit 生成（仅本机分析环境使用，不要照搬到服务器）
+kernel.yama.ptrace_scope = 0
+vm.mmap_min_addr = 0
+fs.suid_dumpable = 1
+kernel.core_pattern = core.%e.%p
+EOF
+  sysctl --system >/dev/null 2>&1 || warn "sysctl 部分参数未生效（WSL 内核限制，不影响使用）"
+  cat > /etc/security/limits.d/99-ctf.conf <<'EOF'
+* soft core unlimited
+* hard core unlimited
+EOF
+  ok "ptrace_scope=0 / mmap_min_addr=0 / core dump 已配置"
+}
+
+# ---------------------------------------------------------------- 9. Docker（可选）
 setup_docker() {
   [ "$CTF_WITH_DOCKER" = "1" ] || return 0
   step "Docker（可选）"
@@ -278,6 +298,7 @@ setup_user
 install_ctf_tools
 setup_python
 setup_pwndbg
+setup_sysctl
 setup_desktop
 setup_docker
 setup_shell

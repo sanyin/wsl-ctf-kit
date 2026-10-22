@@ -94,6 +94,8 @@ DEPS=(
   "ropgadget==7.6"
   "requests>=2.34.2,<3"
   "rich>=15.0.0,<16"
+  # 必需：pwndbg.aglib.symbol 启动时就 import niche_elf，缺了直接加载失败
+  "niche-elf==0.3.7"
 )
 log "安装 pwndbg 依赖（${#DEPS[@]} 个）"
 "$VENV/bin/pip" install -q $PIP_INDEX "${DEPS[@]}" 2>&1 | tail -n 5 || warn "部分依赖安装失败"

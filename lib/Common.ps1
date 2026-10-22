@@ -35,10 +35,11 @@ function Invoke-WslNative {
     }
 }
 
-# 流式执行（装配脚本用）：直接写控制台，避免管道编码问题；返回退出码
+# 流式执行（装配脚本用）：直接写控制台，避免管道编码问题；只返回退出码
+# 注意必须用 Out-Host：否则子进程输出会进函数返回值，和退出码混在一起
 function Invoke-Stream {
     param([Parameter(Mandatory)][string]$FilePath, [string[]]$Arguments = @())
-    & $FilePath @Arguments
+    & $FilePath @Arguments | Out-Host
     return $LASTEXITCODE
 }
 
