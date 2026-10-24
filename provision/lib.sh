@@ -85,12 +85,14 @@ apt_update_guarded() {
 }
 
 # 用真实索引文件测吞吐，选出最快的镜像（结果写到 stdout，其它信息走 stderr）
+# 用法： pick_mirror <suite> <mirror-url...>
+# 注意：mirror URL 本身已包含发行版路径（…/kali 或 …/ubuntu），不要再拼一层
 pick_mirror() {
-  local suite="$1" base_path="$2"; shift 2
+  local suite="$1"; shift
   local best="" best_speed=0 m
   for m in "$@"; do
     local res code speed
-    res=$(curl -s -o /dev/null -m 8 -w "%{http_code} %{speed_download}" "$m/$base_path/dists/$suite/main/binary-amd64/Packages.gz" 2>/dev/null || echo "000 0")
+    res=$(curl -s -o /dev/null -m 8 -w "%{http_code} %{speed_download}" "$m/dists/$suite/main/binary-amd64/Packages.gz" 2>/dev/null || echo "000 0")
     code=${res%% *}; speed=${res##* }; speed=${speed%.*}
     if [ "$code" = "200" ] || [ "$code" = "206" ]; then
       printf '  %-46s %s MB/s\n' "$m" "$(awk -v s="$speed" 'BEGIN{printf "%.2f", s/1048576}')" >&2

@@ -54,8 +54,12 @@ cd wsl-ctf-kit
 - Windows Terminal 里的 `Kali`、`Ubuntu-CTF` 两个 profile（tab 颜色区分）
 - `C:\WSL\Kali`、`C:\WSL\Ubuntu-CTF`（虚拟磁盘位置）
 
-> 首次安装耗时：Kali 镜像 236MB + 工具链约 10–30 分钟；Ubuntu 镜像 30MB + 工具链约 10–20 分钟。
+> 首次安装耗时：Kali 镜像 236MB + 工具链约 3.5–4GB（20–45 分钟）；Ubuntu 镜像 30MB + 工具链约 1GB（10–20 分钟）。
 > 中途断网/关窗口不用怕，重跑 `install.ps1` 会复用已下载的镜像并跳过已完成步骤。
+
+> 为了不把新手硬盘塞满，Kali 只装 CTF/渗透真正用得到的家族：
+> **不含** `kali-tools-802-11`（无线攻击要真实无线网卡 + 监听模式，WSL 里没有）、
+> 蓝牙 / SDR / RFID / 硬件 / VoIP 同理。要的话自己 `apt install kali-tools-802-11`。
 
 ---
 
@@ -88,13 +92,14 @@ cd wsl-ctf-kit
 
 ### Kali（CTF 主战场）
 - **基础套件**：`kali-linux-headless` + information-gathering / vulnerability / web / exploitation /
-  passwords / post-exploitation / sniffing / database / forensics / reverse-engineering /
+  passwords / post-exploitation / sniffing / forensics / reverse-engineering /
   crypto-stego / reporting / top10
 - **点名的**：`metasploit-framework`、`seclists`(1.9G)、`sqlmap`、`ffuf`、`gobuster`、`nikto`、
   `nmap`、`masscan`、`hashcat`、`john`、`hydra`、`tshark`、`binwalk`、`foremost`、`sleuthkit`、
   `radare2`、`rizin`、`ghidra`、`jadx`、`apktool`、`responder`、`nxc`、`impacket`、`proxychains4`、`chisel`
 - **Pwn**：`pwndbg`、`python3-pwntools`、`patchelf`、`checksec`、`qemu-user`
 - **桌面**（`-WithDesktop`）：Win-KeX，`kex` 或 `kex --sl` 直接起 XFCE
+- **不含**无线/蓝牙/SDR/RFID/硬件/VoIP 家族（WSL 里没有对应硬件，装了也是摆设）
 
 ### Ubuntu（通用 / pwn）
 - zsh + 补全高亮、`fzf`、`zoxide`、`ripgrep`、`bat`、`tmux`、`git`、`build-essential`

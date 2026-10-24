@@ -50,7 +50,7 @@ setup_mirrors() {
   local best=""
   if have curl; then
     if [ "$CTF_FLAVOR" = "kali" ]; then
-      best=$(pick_mirror kali-rolling kali \
+      best=$(pick_mirror kali-rolling \
         https://mirrors.tuna.tsinghua.edu.cn/kali \
         https://mirrors.ustc.edu.cn/kali \
         https://mirrors.aliyun.com/kali \
@@ -58,7 +58,7 @@ setup_mirrors() {
         http://http.kali.org/kali)
       [ -n "$best" ] && set_kali_mirror "$best"
     else
-      best=$(pick_mirror noble ubuntu \
+      best=$(pick_mirror noble \
         http://mirrors.tuna.tsinghua.edu.cn/ubuntu \
         http://mirrors.ustc.edu.cn/ubuntu \
         http://mirrors.aliyun.com/ubuntu \
@@ -130,11 +130,15 @@ CTF_COMMON=(
 install_ctf_tools() {
   step "CTF 工具链"
   if [ "$CTF_FLAVOR" = "kali" ]; then
-    log "Kali：安装官方 headless 套装 + 分场景家族（体积较大）"
+    log "Kali：官方 headless 套装 + 分场景家族（约 3.5-4GB 下载）"
+    # 只挑 CTF/渗透真会用到的家族：
+    #  - 不含 kali-tools-802-11（无线攻击需要真实无线网卡+监听模式，WSL 里没有）
+    #  - 不含 kali-tools-bluetooth / sdr / rfid / hardware / voip（同理，需要硬件）
+    #  - 不含 kali-tools-database（sqlmap 已在 web 家族里，单独的 DB 工具链少用又占地方）
     install_pkgs kali-linux-headless \
       kali-tools-information-gathering kali-tools-vulnerability kali-tools-web \
       kali-tools-exploitation kali-tools-passwords kali-tools-post-exploitation \
-      kali-tools-sniffing-spoofing kali-tools-database kali-tools-forensics \
+      kali-tools-sniffing-spoofing kali-tools-forensics \
       kali-tools-reverse-engineering kali-tools-crypto-stego kali-tools-reporting \
       kali-tools-top10 seclists metasploit-framework
     install_pkgs "${CTF_COMMON[@]}"
