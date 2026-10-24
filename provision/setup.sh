@@ -296,6 +296,10 @@ finish() {
 
 # ---------------------------------------------------------------- 主流程
 detect_flavor
+# 早期标记：万一装配被中断（此时 wsl.conf 还没写），重跑 install.ps1 也能认出
+# 这是本工具的发行版，不会傻乎乎再建一个 Kali-CTF2
+touch /etc/wsl-ctf-kit
+setup_policy_rcd      # 安装期间不启动服务（否则个别 postinst 会卡住）
 setup_mirrors
 install_base
 setup_user

@@ -139,7 +139,7 @@ function Get-KitDistro([string]$Base) {
     foreach ($c in $cands) {
         $out = Invoke-WslChecked -Arguments @(
             '-d', $c, '-u', 'root', '--', 'bash', '-c',
-            'grep -q wsl-ctf-kit /etc/wsl.conf && echo KIT'
+            '(test -f /etc/wsl-ctf-kit || grep -q wsl-ctf-kit /etc/wsl.conf) && echo KIT'
         )
         if ($out -match 'KIT') { return $c }
     }

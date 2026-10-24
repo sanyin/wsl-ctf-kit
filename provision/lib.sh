@@ -37,6 +37,7 @@ start_logging() {
 }
 
 export DEBIAN_FRONTEND=noninteractive
+export DEBCONF_NONINTERACTIVE_SEEN=true
 export NEEDRESTART_MODE=a
 export APT_LISTCHANGES_FRONTEND=none
 
@@ -46,11 +47,23 @@ pkg_exists() { apt-cache show "$1" >/dev/null 2>&1; }
 apt_unlock() {
   rm -f /var/lib/apt/lists/lock /var/cache/apt/archives/lock \
         /var/lib/dpkg/lock /var/lib/dpkg/lock-frontend 2>/dev/null || true
-  dpkg --configure -a >/dev/null 2>&1 || true
+  dpkg --configure -a </dev/null >/dev/null 2>&1 || true
+}
+
+# 安装期间禁止启动服务：
+#   WSL 里没有完整 init/硬件，某些包（kismet 等）的 postinst 会卡在启动服务上。
+#   这是容器/CI 的标准做法，装完不会影响手动 systemctl 启动。
+setup_policy_rcd() {
+  if [ ! -x /usr/sbin/policy-rc.d ]; then
+    printf '#!/bin/sh\nexit 101\n' > /usr/sbin/policy-rc.d
+    chmod 755 /usr/sbin/policy-rc.d
+  fi
 }
 
 apt_get() {
   apt_unlock
+  # </dev/null 很关键：某些 debconf 配置脚本（kismet 等）会读 stdin，
+  # 在 detached 进程里 stdin 永不关闭 → 永久挂住。
   apt-get -y -q \
     -o Dpkg::Options::=--force-confdef \
     -o Dpkg::Options::=--force-confold \
@@ -59,7 +72,7 @@ apt_get() {
     -o Acquire::http::Timeout=30 \
     -o Acquire::https::Timeout=30 \
     -o Dpkg::Progress-Fancy=0 \
-    "$@"
+    "$@" </dev/null
 }
 
 install_pkgs() {
@@ -81,7 +94,7 @@ apt_update_guarded() {
     -o Acquire::ForceIPv4=true \
     -o Acquire::http::Timeout=20 \
     -o Acquire::https::Timeout=20 \
-    -o Dpkg::Progress-Fancy=0 || warn "apt update 超时或失败，继续"
+    -o Dpkg::Progress-Fancy=0 </dev/null || warn "apt update 超时或失败，继续"
 }
 
 # 用真实索引文件测吞吐，选出最快的镜像（结果写到 stdout，其它信息走 stderr）

@@ -6,51 +6,62 @@
 
 $script:KitHome = Join-Path $env:USERPROFILE '.wsl-ctf-kit'
 
-function Get-TerminalSettingsPath {
+function Get-TerminalSettingsPaths {
+    $found = @()
     $candidates = @(
         (Join-Path $env:LOCALAPPDATA 'Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json'),
         (Join-Path $env:LOCALAPPDATA 'Packages\Microsoft.WindowsTerminalPreview_8wekyb3d8bbwe\LocalState\settings.json'),
         (Join-Path $env:LOCALAPPDATA 'Microsoft\Windows Terminal\settings.json')
     )
-    foreach ($c in $candidates) { if (Test-Path -LiteralPath $c) { return $c } }
+    foreach ($c in $candidates) { if (Test-Path -LiteralPath $c) { $found += $c } }
 
-    # 便携版：wt.exe 所在目录的 settings/settings.json
+    # 便携版：wt.exe 旁边的 settings/settings.json（可能同时装了 Store 版和便携版）
     $wt = Get-Command wt.exe -ErrorAction SilentlyContinue
     if ($wt) {
         $dir = Split-Path -Parent $wt.Source
-        foreach ($rel in @('settings\settings.json', '..\settings\settings.json')) {
-            $p = Join-Path $dir $rel
-            if (Test-Path -LiteralPath $p) { return (Resolve-Path $p).Path }
-        }
-        # 便携版常见布局：<root>\terminal-x.y\WindowsTerminal.exe + <root>\settings
         $parent = Split-Path -Parent $dir
-        $p = Join-Path $parent 'settings\settings.json'
-        if (Test-Path -LiteralPath $p) { return $p }
+        foreach ($p in @(
+            (Join-Path $dir 'settings\settings.json'),
+            (Join-Path $parent 'settings\settings.json'),
+            (Join-Path $dir '..\settings\settings.json')
+        )) {
+            if (Test-Path -LiteralPath $p) {
+                $full = (Resolve-Path $p).Path
+                if ($found -notcontains $full) { $found += $full }
+            }
+        }
     }
-    return $null
+    # 手动指定（便携版没在 PATH 里时可用）：分号分隔的 settings.json 路径
+    if ($env:WSL_CTF_KIT_TERMINAL_SETTINGS) {
+        foreach ($p in ($env:WSL_CTF_KIT_TERMINAL_SETTINGS -split ';')) {
+            $t = $p.Trim()
+            if ($t -and (Test-Path -LiteralPath $t) -and ($found -notcontains $t)) { $found += $t }
+        }
+    }
+    return $found
 }
 
-function Add-TerminalProfile {
+# 兼容旧调用：返回第一个
+function Get-TerminalSettingsPath {
+    return (Get-TerminalSettingsPaths | Select-Object -First 1)
+}
+
+function Update-OneTerminalSettings {
     param(
+        [Parameter(Mandatory)][string]$Settings,
         [Parameter(Mandatory)][string]$Distro,
         [Parameter(Mandatory)][string]$UserName,
         [string]$TabColor = '#268BEE',
         [string]$Guid = ''
     )
-    $settings = Get-TerminalSettingsPath
-    if (-not $settings) {
-        Write-Warn '未找到 Windows Terminal 配置，跳过 profile 注入（.cmd 启动器仍可用）'
-        return $false
-    }
 
-    $backup = "$settings.bak-" + (Get-Date -Format 'yyyyMMdd-HHmmss')
-    Copy-Item -LiteralPath $settings -Destination $backup -Force
-    Write-Info "已备份 Terminal 配置：$(Split-Path -Leaf $backup)"
+    $backup = "$Settings.bak-" + (Get-Date -Format 'yyyyMMdd-HHmmss')
+    Copy-Item -LiteralPath $Settings -Destination $backup -Force
 
     try {
-        $json = Get-Content -LiteralPath $settings -Raw -Encoding UTF8 | ConvertFrom-Json
+        $json = Get-Content -LiteralPath $Settings -Raw -Encoding UTF8 | ConvertFrom-Json
     } catch {
-        Write-Warn "Terminal 配置无法解析（可能含注释），跳过注入: $_"
+        Write-Warn "  $Settings 无法解析（可能含注释），跳过"
         return $false
     }
 
@@ -61,25 +72,38 @@ function Add-TerminalProfile {
     $list = @($json.profiles.list)
 
     $cmdline = "wsl.exe -d $Distro -u $UserName --cd ~"
-    $existing = $list | Where-Object { $_.guid -eq $Guid }
-    if ($existing) {
-        Write-Ok "Terminal profile 已存在：$Distro"
+
+    # Terminal 会给已注册的 WSL 发行版自动生成一个同名 profile（source=Microsoft.WSL）。
+    # 如果只是新建一个，`wt -p <名字>` 就可能命中那个自动项（没有 -u/--cd），体验不一致。
+    # 所以策略是「就地改造」：优先按 guid 找，其次按同名找，改 commandline 并去掉 source。
+    $target = $list | Where-Object { $_.guid -eq $Guid } | Select-Object -First 1
+    if (-not $target) {
+        $target = $list | Where-Object { $_.name -eq $Distro } | Select-Object -First 1
+    }
+
+    if ($target) {
+        $target | Add-Member -NotePropertyName commandline -NotePropertyValue $cmdline -Force
+        $target | Add-Member -NotePropertyName hidden -NotePropertyValue $false -Force
+        $target | Add-Member -NotePropertyName tabColor -NotePropertyValue $TabColor -Force
+        # 有 source 字段时 Terminal 会忽略 commandline，必须去掉
+        if ($target.PSObject.Properties.Name -contains 'source') {
+            $target.PSObject.Properties.Remove('source')
+        }
+        Write-Ok "已更新 profile：$($target.name)"
     } else {
-        $name = $Distro
-        if ($list | Where-Object { $_.name -eq $name }) { $name = "$Distro (CTF Kit)" }
         $list += [pscustomobject]@{
             commandline = $cmdline
             guid        = $Guid
             hidden      = $false
-            name        = $name
+            name        = $Distro
             tabColor    = $TabColor
         }
-        Write-Ok "已添加 Terminal profile：$name"
+        Write-Ok "已添加 profile：$Distro"
     }
 
-    # 隐藏 Windows Terminal 自动生成的同名项，避免 `wt -p Kali` 命中歧义
+    # 兜底：把其它残留的同名自动生成项隐藏，避免 `wt -p <名字>` 命中歧义
     foreach ($p in $list) {
-        if ($p.source -eq 'Microsoft.WSL' -and $p.name -eq $Distro -and $p.guid -ne $Guid) {
+        if ($p.source -eq 'Microsoft.WSL' -and $p.name -eq $Distro) {
             $p.hidden = $true
             if ($p.name -notmatch '\(自动生成') { $p.name = "$Distro (自动生成的重复项)" }
         }
@@ -87,14 +111,39 @@ function Add-TerminalProfile {
 
     $json.profiles.list = $list
     try {
-        $json | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $settings -Encoding UTF8
-        Write-Ok 'Terminal 配置已保存'
+        $json | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $Settings -Encoding UTF8
         return $true
     } catch {
-        Write-Warn "写回 Terminal 配置失败（用备份还原）: $_"
-        Copy-Item -LiteralPath $backup -Destination $settings -Force
+        Write-Warn "写回失败（已用备份还原）: $_"
+        Copy-Item -LiteralPath $backup -Destination $Settings -Force
         return $false
     }
+}
+
+function Add-TerminalProfile {
+    param(
+        [Parameter(Mandatory)][string]$Distro,
+        [Parameter(Mandatory)][string]$UserName,
+        [string]$TabColor = '#268BEE',
+        [string]$Guid = ''
+    )
+    # 机器上可能同时装了 Store 版和便携版 Terminal，两个配置都要写，否则用户从
+    # 另一个入口打开时就看不到 profile（表现为「快捷方式能开、下拉菜单里没有」）。
+    $paths = @(Get-TerminalSettingsPaths)
+    if ($paths.Count -eq 0) {
+        Write-Warn '未找到 Windows Terminal 配置，跳过 profile 注入（.cmd 启动器仍可用）'
+        return $false
+    }
+
+    $okCount = 0
+    foreach ($p in $paths) {
+        Write-Info "Terminal 配置：$p"
+        if (Update-OneTerminalSettings -Settings $p -Distro $Distro -UserName $UserName -TabColor $TabColor -Guid $Guid) {
+            $okCount++
+        }
+    }
+    if ($okCount -gt 0) { Write-Ok "Terminal profile 已写入 $okCount 个配置" }
+    return ($okCount -gt 0)
 }
 
 function New-LauncherCmd {

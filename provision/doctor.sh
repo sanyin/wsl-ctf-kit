@@ -60,7 +60,11 @@ IS_KALI=0
 case "${ID:-}${ID_LIKE:-}" in *kali*) IS_KALI=1 ;; esac
 if [ "$IS_KALI" = "1" ]; then
   check "msfconsole" msfconsole
-  check "kex"       kex
+  if command -v kex >/dev/null 2>&1; then
+    ok "kex" "$(command -v kex)"
+  else
+    echo "  [ -- ] kex                   未装（可选：install.ps1 -WithDesktop 安装图形桌面）"
+  fi
 else
   echo "  [ -- ] msfconsole / kex      仅 Kali 提供，Ubuntu 跳过"
 fi

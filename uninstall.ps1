@@ -80,19 +80,22 @@ foreach ($t in $targets) {
     $lnk = Join-Path ([Environment]::GetFolderPath('Desktop')) "Open-$t.lnk"
     if (Test-Path -LiteralPath $lnk) { Remove-Item -LiteralPath $lnk -Force; Write-Ok "已删除桌面快捷方式" }
 
-    # 移除 Terminal profile
+    # 移除 Terminal profile（Store 版和便携版可能同时存在，都要清）
     $key = if ($t -match '^Kali') { 'Kali' } else { 'Ubuntu' }
     $guid = $guidMap[$key]
-    $settings = Get-TerminalSettingsPath
-    if ($settings -and $guid) {
+    foreach ($settings in @(Get-TerminalSettingsPaths)) {
         try {
             $json = Get-Content -LiteralPath $settings -Raw -Encoding UTF8 | ConvertFrom-Json
             $before = @($json.profiles.list).Count
-            $json.profiles.list = @($json.profiles.list | Where-Object { $_.guid -ne $guid })
+            # 既按固定 guid 删，也按 commandline 里的 -d <发行版> 删：
+            # profile 可能是「就地改造」了 Terminal 自动生成的同名项，guid 不是我们的
+            $json.profiles.list = @($json.profiles.list | Where-Object {
+                $_.guid -ne $guid -and ($_.commandline -notmatch [regex]::Escape("-d $t"))
+            })
             if (@($json.profiles.list).Count -ne $before) {
                 Copy-Item -LiteralPath $settings -Destination "$settings.bak-" -Force -ErrorAction SilentlyContinue
                 $json | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $settings -Encoding UTF8
-                Write-Ok '已移除 Windows Terminal profile'
+                Write-Ok "已移除 Terminal profile（$(Split-Path -Leaf (Split-Path -Parent $settings))）"
             }
         } catch { Write-Warn "清理 Terminal profile 失败: $_" }
     }
