@@ -1,5 +1,7 @@
 # wsl-ctf-kit
 
+> **[English README](README.en.md)** · 中文
+
 > Windows 上给 CTF 新手的一键环境：**WSL2 Kali + Ubuntu，装完就能打**。
 > 双击一个 `install.ps1`，得到两个带完整工具链的 Linux 环境，不用碰虚拟机、不用配双系统。
 
@@ -40,7 +42,7 @@ Windows 11 / 10 (2004+)
 
 ```powershell
 # 1. 打开 PowerShell（不需要管理员）
-git clone https://github.com/sanyin/wsl-ctf-kit.git
+git clone https://github.com/<你的账号>/wsl-ctf-kit.git
 cd wsl-ctf-kit
 
 # 2. 先看看环境是否就绪（不下载、不安装）
@@ -156,6 +158,17 @@ Windows 侧随时体检：
 ```
 
 ---
+
+## 文档
+
+| 文档 | 内容 |
+|---|---|
+| [docs/manual-kali.md](docs/manual-kali.md) | **Kali 操作手册**（Web 为主）：信息收集 → 目录/参数爆破 → SQLi/XSS → nuclei 漏扫 → Burp/mitmproxy → 字典位置 → 代理 → 排障 |
+| [docs/manual-ubuntu.md](docs/manual-ubuntu.md) | **Ubuntu 操作手册**：Pwn 标准流程、pwndbg 用法、Python/venv、Docker 靶场、别名速查、排障 |
+| [docs/tools.md](docs/tools.md) | 工具全量清单（按用途分组）+ 预置别名/函数 |
+| [docs/faq.md](docs/faq.md) | 常见问题：没装 WSL / 下载慢 / 磁盘 / 代理 / 桌面 / 卸载 |
+| [docs/tested.md](docs/tested.md) | 实测记录：真实机器上的全流程结果 + 踩过并修掉的 12 个问题 |
+| [README.en.md](README.en.md) | English README |
 
 ## 目录结构
 

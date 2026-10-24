@@ -18,6 +18,11 @@
 | `ffuf` / `gobuster` / `feroxbuster` **K** / `dirb` | 目录与参数爆破 |
 | `nikto` | Web 服务快扫 |
 | `whatweb` / `wpscan` **K** | 指纹、WordPress |
+| `nuclei` **K** | 模板化漏洞扫描（`nuclei -update-templates` 更新模板） |
+| `dalfox` **K** / `xsser` **K** | XSS 扫描 / 生成 payload |
+| `arjun` **K** | 隐藏参数发现 |
+| `dirsearch` **K** / `feroxbuster` **K** | 目录爆破 |
+| `commix` **K** / `dotdotpwn` **K** / `wafw00f` **K** / `joomscan` **K** | 命令注入 / 目录穿越 / WAF 识别 / Joomla |
 | `burpsuite` **K** / `zaproxy` **K** / `mitmproxy` **K** | 抓包改包（GUI） |
 
 ## 口令

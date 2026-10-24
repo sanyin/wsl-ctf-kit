@@ -70,3 +70,11 @@ install.ps1 -Distro kali -Location C:\WSL-test -UserName ctf
 | ARM64 / WSL 的 arm64 发行版 | 只实现了 amd64；ARM 设备会下载失败并明确报错 |
 | 有代理 / 企业网络 | 镜像站被拦时会退回官方源，速度未知 |
 | 中文以外的系统语言 | `.cmd` 是纯 ASCII，理论上与语言无关，未实测 |
+
+## 2026-10-24 复检（本机现有环境）
+
+| 环境 | 结果 |
+|---|---|
+| Ubuntu 22.04（baishui，早期 wsl-setup 配置） | **52 通过 / 5 警告 / 0 失败**；警告项为 r2 / rizin / rockyou.txt（均可选，逆向走 Kali） |
+| Kali Rolling（baishui） | **38 通过 / 0 警告 / 0 失败** |
+| Kali 的 Web 工具 | sqlmap / ffuf / feroxbuster / gobuster / dirb / nikto / whatweb / wpscan / nuclei / wafw00f / joomscan / commix / xsser / dotdotpwn / wfuzz / jsql-injection 全部就位；本次补装 dalfox / arjun / dirsearch |
