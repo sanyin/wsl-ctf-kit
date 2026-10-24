@@ -40,7 +40,7 @@ Windows 11 / 10 (2004+)
 
 ```powershell
 # 1. 打开 PowerShell（不需要管理员）
-git clone https://github.com/<你的账号>/wsl-ctf-kit.git
+git clone https://github.com/sanyin/wsl-ctf-kit.git
 cd wsl-ctf-kit
 
 # 2. 先看看环境是否就绪（不下载、不安装）
