@@ -32,6 +32,8 @@ Windows 11 / 10 (2004+)
 
 另外：所有步骤**幂等**，坏了重跑就行；有 `doctor.ps1` 体检和 `uninstall.ps1` 干净卸载。
 
+> 上面这些坑都是在本机真跑时踩出来并修掉的，每条都有记录 → [docs/tested.md](docs/tested.md)
+
 ---
 
 ## 快速开始
