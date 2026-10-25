@@ -1,4 +1,4 @@
-# lib/Launcher.ps1 — 生成一键启动器：.cmd + Windows Terminal profile + 桌面快捷方式
+﻿# lib/Launcher.ps1 — 生成一键启动器：.cmd + Windows Terminal profile + 桌面快捷方式
 # 设计要点：
 #  * .cmd 只写 ASCII：.cmd 里的中文在 GBK 代码页下会把命令行拆碎（实测踩过）
 #  * Terminal profile 用固定 GUID，重跑不会产生重复项
@@ -173,7 +173,9 @@ function New-DesktopShortcut {
     param(
         [Parameter(Mandatory)][string]$TargetCmd,
         [Parameter(Mandatory)][string]$Name,
-        [string]$IconPath = ''
+        [string]$IconPath = '',
+        # 1=正常 7=最小化：桌面端启动器用 7，避免 cmd 黑窗闪一下（GUI 由 start /normal 保证正常显示）
+        [int]$WindowStyle = 1
     )
     try {
         $desktop = [Environment]::GetFolderPath('Desktop')
@@ -184,6 +186,7 @@ function New-DesktopShortcut {
         $s.WorkingDirectory = Split-Path -Parent $TargetCmd
         if ($IconPath -and (Test-Path -LiteralPath $IconPath)) { $s.IconLocation = "$IconPath,0" }
         $s.Description = "wsl-ctf-kit: 一键启动 $Name"
+        $s.WindowStyle = $WindowStyle
         $s.Save()
         Write-Ok "桌面快捷方式：$lnk"
         return $lnk
@@ -228,6 +231,18 @@ function New-DesktopLauncher {
         Write-Warn "未找到 VNC 密码文件；先在 $Distro 里跑一次 kex --win --start"
     }
 
+    # 真正的启动/摆位逻辑在 lib/desktop-launch.ps1（复制到 kit 目录）
+    # 原因：由隐藏/最小化的父进程启动 GUI 时，Windows 会把窗口也带成最小化；
+    #       直接 start / Start-Process 都压不住，必须在启动后主动 SW_RESTORE + 摆位。
+    $launcher = Join-Path $script:KitHome 'desktop-launch.ps1'
+    $launcherSrc = Join-Path $PSScriptRoot 'desktop-launch.ps1'
+    if (Test-Path -LiteralPath $launcherSrc) {
+        Copy-Item -LiteralPath $launcherSrc -Destination $launcher -Force
+    } elseif (-not (Test-Path -LiteralPath $launcher)) {
+        Write-Warn "缺少 desktop-launch.ps1，无法生成桌面启动器"
+        return $null
+    }
+
     $cmd = Join-Path $script:KitHome "Open-$Distro-Desktop.cmd"
     $lines = @(
         '@echo off',
@@ -244,15 +259,17 @@ function New-DesktopLauncher {
         '  pause',
         '  exit /b 1',
         ')',
+        'if not exist "%~dp0desktop-launch.ps1" (',
+        '  echo Missing desktop-launch.ps1',
+        '  pause',
+        '  exit /b 1',
+        ')',
         '',
-        'rem 1) make sure the Win-KeX server runs inside WSL (returns quickly)',
-        'wsl.exe -d %DISTRO% -u %KUSER% -- kex --win --start >nul 2>&1',
-        "rem 2) open the viewer on the Windows side so it survives wsl.exe exit",
-        "start `"`" `"%VIEWER%`" -SecurityTypes VeNCrypt,TLSvnc -passwd `"%VNPASS%`" -FullScreen localhost:$DisplayNumber",
+        "powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"%~dp0desktop-launch.ps1`" -Distro `"%DISTRO%`" -Kuser `"%KUSER%`" -Viewer `"%VIEWER%`" -VnPass `"%VNPASS%`" -Display $DisplayNumber >> `"%LOCALAPPDATA%\wsl-ctf-kit\desktop.log`" 2>&1",
         'exit /b 0'
     )
     Set-Content -LiteralPath $cmd -Value ($lines -join "`r`n") -Encoding ASCII
     Write-Ok "桌面启动器：$cmd"
-    [void](New-DesktopShortcut -TargetCmd $cmd -Name "Open-$Distro-Desktop" -IconPath $IconPath)
+    [void](New-DesktopShortcut -TargetCmd $cmd -Name "Open-$Distro-Desktop" -IconPath $IconPath -WindowStyle 7)
     return $cmd
 }

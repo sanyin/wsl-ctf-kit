@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     wsl-ctf-kit —— Windows 上的 CTF 一键环境（WSL2 Kali + Ubuntu）

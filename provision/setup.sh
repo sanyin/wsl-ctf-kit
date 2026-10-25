@@ -117,6 +117,55 @@ EOF
   ok "$CTF_USER 已加入 sudo 组（密码 $CTF_PASS）"
 }
 
+# ---------------------------------------------------------------- 3.5 工作目录说明
+# ~/lab 下预留 ctf/ tools/ 两个空目录，容易让人以为"装坏了"或"工具呢"，
+# 所以各放一个 README 说明清楚。
+setup_lab() {
+  local H="/home/$CTF_USER/lab"
+  install -d -o "$CTF_USER" -g "$CTF_USER" "$H/ctf" "$H/tools" 2>/dev/null || true
+
+  if [ ! -f "$H/README.md" ]; then
+    cat > "$H/README.md" <<'EOF'
+# ~/lab —— 工作目录
+
+| 目录 | 用途 |
+|---|---|
+| `ctf/` | 放题目。**默认是空目录，这是故意的**：用 `ctfnew <名字>` 生成 `<名字>/{files,src,out}` |
+| `tools/` | 放你自己下载/编译的工具。**默认也是空的** |
+| `venv/` | Python 虚拟环境：`source ~/lab/venv/bin/activate` |
+
+工具本体不在这里：apt 装的在 `/usr/bin`，字典在 `/usr/share/seclists`，pwndbg 在 `/opt/pwndbg-src`。
+EOF
+  fi
+
+  if [ ! -f "$H/ctf/README.md" ]; then
+    cat > "$H/ctf/README.md" <<'EOF'
+# ~/lab/ctf
+
+放题目的地方（空目录是正常的）。
+
+```bash
+cd ~/lab/ctf && ctfnew web1     # 生成 web1/{files,src,out}
+```
+EOF
+  fi
+
+  if [ ! -f "$H/tools/README.md" ]; then
+    cat > "$H/tools/README.md" <<'EOF'
+# ~/lab/tools
+
+放自己下载/编译的工具。
+
+```bash
+cd ~/lab/tools && git clone https://ghfast.top/https://github.com/<owner>/<repo>
+ln -s ~/lab/tools/<repo>/<entry> ~/.local/bin/<name>   # ~/.local/bin 在 PATH 里
+```
+EOF
+  fi
+
+  chown -R "$CTF_USER:$CTF_USER" "$H" 2>/dev/null || true
+  ok "~/lab 已就绪（ctf/ tools/ 目录里的 README 说明了用途）"
+}
 # ---------------------------------------------------------------- 4. CTF 工具链
 CTF_COMMON=(
   nmap masscan tcpdump tshark wireshark-common
@@ -334,6 +383,7 @@ setup_policy_rcd      # 安装期间不启动服务（否则个别 postinst 会�
 setup_mirrors
 install_base
 setup_user
+setup_lab
 install_ctf_tools
 setup_python
 setup_pwndbg

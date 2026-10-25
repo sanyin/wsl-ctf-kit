@@ -1,4 +1,4 @@
-# lib/Common.ps1 — 公共函数：日志、WSL 探测、下载校验、路径转换
+﻿# lib/Common.ps1 — 公共函数：日志、WSL 探测、下载校验、路径转换
 # 被 install.ps1 / doctor.ps1 / uninstall.ps1 dot-source 引用
 
 $ErrorActionPreference = 'Stop'

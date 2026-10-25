@@ -38,11 +38,27 @@ Windows 11 / 10 (2004+)
 
 ---
 
+## 效果预览
+
+**Kali 桌面** —— 装完桌面后会有一个 `Open-Kali-Desktop` 快捷方式，双击直接进图形界面：
+
+![Kali 桌面](docs/images/kali-desktop.png)
+
+**环境体检** —— `doctor.ps1` 一条命令验证装没装好（实测 38 项全过）：
+
+![环境体检](docs/images/kali-doctor.png)
+
+**`~/lab` 目录** —— `ctf/`、`tools/` 默认是空的，各放了一个 README 说明用途，别再以为是装坏了：
+
+![lab 目录](docs/images/lab-layout.png)
+
+---
+
 ## 快速开始
 
 ```powershell
 # 1. 打开 PowerShell（不需要管理员）
-git clone https://github.com/<你的账号>/wsl-ctf-kit.git
+git clone https://github.com/sanyin/wsl-ctf-kit.git
 cd wsl-ctf-kit
 
 # 2. 先看看环境是否就绪（不下载、不安装）

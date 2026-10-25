@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     卸载 wsl-ctf-kit 装出来的发行版（会删除对应的 ext4.vhdx，不可恢复）

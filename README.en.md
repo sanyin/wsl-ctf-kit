@@ -37,6 +37,22 @@ Every step is **idempotent**: if something breaks, just run it again.
 
 ---
 
+## Screenshots
+
+**Kali desktop** — the `Open-Kali-Desktop` shortcut takes you straight into XFCE:
+
+![Kali desktop](docs/images/kali-desktop.png)
+
+**Health check** — `doctor.ps1` verifies the installation:
+
+![doctor](docs/images/kali-doctor.png)
+
+**`~/lab` layout** — `ctf/` and `tools/` start empty on purpose; each ships a README:
+
+![lab layout](docs/images/lab-layout.png)
+
+---
+
 ## Quick start
 
 ```powershell
