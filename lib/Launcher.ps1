@@ -192,3 +192,67 @@ function New-DesktopShortcut {
         return $null
     }
 }
+
+function New-DesktopLauncher {
+    <#
+      生成「打开 Kali 桌面」的启动器。
+      Win-KeX 的 viewer 是 Windows PE，放在 WSL 的 /usr/lib/win-kex 里；
+      如果由 kex 从 WSL 侧拉起，wsl.exe 一退出 viewer 就被杀。
+      所以这里把 viewer 和 VNC 密码文件复制到 Windows 侧，由 .cmd 直接启动。
+    #>
+    param(
+        [Parameter(Mandatory)][string]$Distro,
+        [Parameter(Mandatory)][string]$UserName,
+        [string]$IconPath = '',
+        [string]$DisplayNumber = '1'
+    )
+    $tv = Join-Path $script:KitHome 'TigerVNC'
+    if (-not (Test-Path $tv)) { New-Item -ItemType Directory -Force -Path $tv | Out-Null }
+
+    $viewer = Join-Path $tv 'win-kex-win-x64.exe'
+    if (-not (Test-Path $viewer)) {
+        $src = "\\wsl.localhost\$Distro\usr\lib\win-kex\TigerVNC\win-kex-win-x64"
+        if (-not (Test-Path -LiteralPath $src)) {
+            Write-Warn "未找到 Win-KeX viewer（$src），跳过桌面启动器"
+            return $null
+        }
+        try { Copy-Item -LiteralPath $src -Destination $viewer -Force }
+        catch { Write-Warn "复制 Win-KeX viewer 失败: $_"; return $null }
+    }
+
+    $pwSrc = "\\wsl.localhost\$Distro\home\$UserName\.config\tigervnc\passwd"
+    $pwDst = Join-Path $tv "passwd-$Distro"
+    if (Test-Path -LiteralPath $pwSrc) {
+        Copy-Item -LiteralPath $pwSrc -Destination $pwDst -Force
+    } else {
+        Write-Warn "未找到 VNC 密码文件；先在 $Distro 里跑一次 kex --win --start"
+    }
+
+    $cmd = Join-Path $script:KitHome "Open-$Distro-Desktop.cmd"
+    $lines = @(
+        '@echo off',
+        "rem wsl-ctf-kit: open the $Distro desktop (Win-KeX). Keep this file ASCII-only.",
+        'setlocal',
+        "set `"DISTRO=$Distro`"",
+        "set `"KUSER=$UserName`"",
+        'set "VIEWER=%~dp0TigerVNC\win-kex-win-x64.exe"',
+        "set `"VNPASS=%~dp0TigerVNC\passwd-$Distro`"",
+        '',
+        'if not exist "%VIEWER%" (',
+        '  echo Missing %VIEWER%',
+        '  echo Re-run: install.ps1 -WithDesktop',
+        '  pause',
+        '  exit /b 1',
+        ')',
+        '',
+        'rem 1) make sure the Win-KeX server runs inside WSL (returns quickly)',
+        'wsl.exe -d %DISTRO% -u %KUSER% -- kex --win --start >nul 2>&1',
+        "rem 2) open the viewer on the Windows side so it survives wsl.exe exit",
+        "start `"`" `"%VIEWER%`" -SecurityTypes VeNCrypt,TLSvnc -passwd `"%VNPASS%`" -FullScreen localhost:$DisplayNumber",
+        'exit /b 0'
+    )
+    Set-Content -LiteralPath $cmd -Value ($lines -join "`r`n") -Encoding ASCII
+    Write-Ok "桌面启动器：$cmd"
+    [void](New-DesktopShortcut -TargetCmd $cmd -Name "Open-$Distro-Desktop" -IconPath $IconPath)
+    return $cmd
+}

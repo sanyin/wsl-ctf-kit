@@ -103,7 +103,8 @@ You get:
   `nmap`, `masscan`, `hashcat`, `john`, `hydra`, `tshark`, `binwalk`, `foremost`, `sleuthkit`,
   `radare2`, `rizin`, `ghidra`, `jadx`, `apktool`, `responder`, `nxc`, `impacket`, `proxychains4`, `chisel`
 - Pwn: `pwndbg`, `python3-pwntools`, `patchelf`, `checksec`, `qemu-user`
-- Desktop (opt-in): Win-KeX — `kex` (window) or `kex --sl` (seamless)
+- Desktop (opt-in): Win-KeX / XFCE. A **`Open-Kali-Desktop`** shortcut is created too:
+  double-click it for a fullscreen Kali desktop (`F8` = viewer menu, `Alt+F4` = exit)
 
 ### Ubuntu (dev + pwn)
 - zsh + completions/highlighting, `fzf`, `zoxide`, `ripgrep`, `bat`, `tmux`, `git`, `build-essential`
@@ -130,7 +131,8 @@ newpwn 127.0.0.1 1337 ./chall
 gdb -q ./chall             # pwndbg loads automatically
 
 serve 8000                 # browse http://localhost:8000 on Windows
-kex                        # GUI desktop (only with -WithDesktop)
+kex                        # GUI desktop inside Kali (only with -WithDesktop)
+# or double-click the Open-Kali-Desktop shortcut on the desktop
 ```
 
 Health check / removal (Windows side):

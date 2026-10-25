@@ -80,6 +80,14 @@ foreach ($t in $targets) {
     $lnk = Join-Path ([Environment]::GetFolderPath('Desktop')) "Open-$t.lnk"
     if (Test-Path -LiteralPath $lnk) { Remove-Item -LiteralPath $lnk -Force; Write-Ok "已删除桌面快捷方式" }
 
+    # Win-KeX 桌面启动器（-WithDesktop 时生成）
+    $dcmd = Join-Path $script:KitHome "Open-$t-Desktop.cmd"
+    if (Test-Path -LiteralPath $dcmd) { Remove-Item -LiteralPath $dcmd -Force; Write-Ok '已删除桌面启动器' }
+    $dlnk = Join-Path ([Environment]::GetFolderPath('Desktop')) "Open-$t-Desktop.lnk"
+    if (Test-Path -LiteralPath $dlnk) { Remove-Item -LiteralPath $dlnk -Force; Write-Ok '已删除桌面快捷方式（Win-KeX）' }
+    $pwf = Join-Path $script:KitHome "TigerVNC\passwd-$t"
+    if (Test-Path -LiteralPath $pwf) { Remove-Item -LiteralPath $pwf -Force }
+
     # 移除 Terminal profile（Store 版和便携版可能同时存在，都要清）
     $key = if ($t -match '^Kali') { 'Kali' } else { 'Ubuntu' }
     $guid = $guidMap[$key]

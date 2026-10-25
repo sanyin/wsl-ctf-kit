@@ -78,3 +78,11 @@ install.ps1 -Distro kali -Location C:\WSL-test -UserName ctf
 | Ubuntu 22.04（baishui，早期 wsl-setup 配置） | **52 通过 / 5 警告 / 0 失败**；警告项为 r2 / rizin / rockyou.txt（均可选，逆向走 Kali） |
 | Kali Rolling（baishui） | **38 通过 / 0 警告 / 0 失败** |
 | Kali 的 Web 工具 | sqlmap / ffuf / feroxbuster / gobuster / dirb / nikto / whatweb / wpscan / nuclei / wafw00f / joomscan / commix / xsser / dotdotpwn / wfuzz / jsql-injection 全部就位；本次补装 dalfox / arjun / dirsearch |
+### 2026-10-25 Kali 桌面（Win-KeX）
+
+| 项 | 结果 |
+|---|---|
+| Open-Kali-Desktop 快捷方式 | 双击 → 服务端 :1(5901) 起来 → viewer 全屏 **2048×1280**，窗口标题 <host>:1 (<user>) - TigerVNC |
+| 免交互 | 预先写入 ~/.config/tigervnc/passwd，kex 不再问 VNC 密码 |
+| 权限 | 只放开 sudo mount -o remount,rw /tmp/.X11-unix（sudoers drop-in），其余 sudo 仍需密码 |
+| viewer 稳定性 | viewer 必须从 Windows 侧启动（复制到 %USERPROFILE%\.wsl-ctf-kit\TigerVNC\）；由 WSL 里 kex 拉起的客户端会随 wsl.exe 退出被杀 |

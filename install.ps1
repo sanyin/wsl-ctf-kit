@@ -331,6 +331,11 @@ function New-Launchers([string[]]$Distros) {
 
         $icon = Join-Path $Location "$d\shortcut.ico"
         [void](New-DesktopShortcut -TargetCmd $cmd -Name "Open-$d" -IconPath $icon)
+
+        # 装了桌面（-WithDesktop）就额外给一个「打开 Kali 桌面」的快捷方式
+        if ($WithDesktop -and $d -match '^[Kk]ali') {
+            [void](New-DesktopLauncher -Distro $d -UserName $UserName -IconPath $icon)
+        }
     }
 }
 

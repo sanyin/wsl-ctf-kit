@@ -204,8 +204,39 @@ setup_desktop() {
   [ "$CTF_FLAVOR" = "kali" ] || return 0
   [ "$CTF_WITH_DESKTOP" = "1" ] || { log "跳过图形桌面（加 -WithDesktop 可安装 Win-KeX）"; return 0; }
   step "Win-KeX 图形桌面（XFCE）"
-  install_pkgs kali-desktop-xfce kali-win-kex dbus-x11 xfce4-terminal fonts-wqy-microhei
+  install_pkgs kali-desktop-xfce kali-win-kex dbus-x11 xfce4-terminal \
+               fonts-wqy-microhei fonts-wqy-zenhei
+  install_pkgs kali-win-kex >/dev/null 2>&1 || true
+
+  # 1) Win-KeX 启动时要 sudo 把 WSLg 的只读 X11 socket 目录重挂为可写。
+  #    只放开这一条，其它 sudo 仍然需要密码。
+  #    注意 sudoers 里逗号是命令分隔符，参数里的逗号必须写成 \,
+  local sudoers=/etc/sudoers.d/90-winkex
+  cat > "$sudoers" <<EOF
+# 由 wsl-ctf-kit 添加：Win-KeX 启动桌面时需要重挂 WSLg 的 X11 socket 目录
+$CTF_USER ALL=(root) NOPASSWD: /usr/bin/mount -o remount\,rw /tmp/.X11-unix
+EOF
+  chmod 440 "$sudoers"
+  if visudo -cf "$sudoers" >/dev/null 2>&1; then
+    ok "已授权免密重挂 /tmp/.X11-unix（其余 sudo 仍需密码）"
+  else
+    rm -f "$sudoers"
+    warn "sudoers 校验失败，已回滚（桌面可能需要手动输密码）"
+  fi
+
+  # 2) 预生成 VNC 密码文件，否则 kex 会交互式问密码，快捷方式就没法一键
+  local vd="/home/$CTF_USER/.config/tigervnc"
+  install -d -o "$CTF_USER" -g "$CTF_USER" -m 700 "$vd" 2>/dev/null || true
+  if [ ! -f "$vd/passwd" ]; then
+    head -c 18 /dev/urandom | base64 | tr -d '\n' | cut -c1-16 \
+      | as_user "$CTF_USER" vncpasswd -f > "$vd/passwd" 2>/dev/null || true
+    chown "$CTF_USER:$CTF_USER" "$vd/passwd" 2>/dev/null || true
+    chmod 600 "$vd/passwd" 2>/dev/null || true
+    [ -s "$vd/passwd" ] && ok "VNC 密码已预生成（免交互）" || warn "VNC 密码生成失败，首次 kex 会问密码"
+  fi
+
   ok "桌面已装：kex（独立窗口）/ kex --sl（seamless）"
+  ok "Windows 侧会有「打开 Kali 桌面」快捷方式（install.ps1 -WithDesktop 生成）"
 }
 
 # ---------------------------------------------------------------- 8. pwn 内核参数

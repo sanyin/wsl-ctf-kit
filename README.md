@@ -102,7 +102,8 @@ cd wsl-ctf-kit
   `nmap`、`masscan`、`hashcat`、`john`、`hydra`、`tshark`、`binwalk`、`foremost`、`sleuthkit`、
   `radare2`、`rizin`、`ghidra`、`jadx`、`apktool`、`responder`、`nxc`、`impacket`、`proxychains4`、`chisel`
 - **Pwn**：`pwndbg`、`python3-pwntools`、`patchelf`、`checksec`、`qemu-user`
-- **桌面**（`-WithDesktop`）：Win-KeX，`kex` 或 `kex --sl` 直接起 XFCE
+- **桌面**（`-WithDesktop`）：Win-KeX / XFCE。装完会多一个 **`Open-Kali-Desktop`** 快捷方式，
+  双击直接全屏打开 Kali 桌面；也可以在终端里 `kex`（窗口）/ `kex --sl`（混合）/ `kex --stop`
 - **不含**无线/蓝牙/SDR/RFID/硬件/VoIP 家族（WSL 里没有对应硬件，装了也是摆设）
 
 ### Ubuntu（通用 / pwn）
@@ -139,9 +140,11 @@ gdb -q ./chall     # pwndbg 自动接管
 serve 8000         # 浏览器开 http://localhost:8000
 
 # 图形桌面（装了 -WithDesktop 才有）
-kex                # 独立窗口
+kex                # 独立窗口（在 Kali 终端里）
 kex --sl           # 窗口直接混在 Windows 桌面上
-kex --stop
+kex --stop         # 关掉
+
+# 或者直接双击桌面上的 Open-Kali-Desktop（全屏 Kali 桌面；F8 打开 viewer 菜单，Alt+F4 退出）
 ```
 
 Windows 侧随时体检：

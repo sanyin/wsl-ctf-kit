@@ -12,9 +12,31 @@
 | Windows Terminal | 标签下拉 → `Kali`，或 `wt -p Kali` |
 | 任意终端 | `wsl -d Kali` |
 | 桌面快捷方式 | `Open-Kali`（install.ps1 生成） |
-| 图形桌面 | 先装 `-WithDesktop`，然后 `kex`（独立窗口）/ `kex --sl`（混合窗口）/ `kex --stop` |
+| 图形桌面 | 双击桌面 **`Open-Kali-Desktop`**（全屏）；或终端里 `kex` / `kex --sl` / `kex --stop` |
 
 进入后默认在 `~`，shell 是 zsh。第一件事建议 `passwd` 改密码。
+
+### 1.1 打开桌面（Win-KeX）
+
+装了 `-WithDesktop` 之后，桌面上会有一个 **`Open-Kali-Desktop`** 快捷方式：
+
+- **双击即可**：脚本先进 WSL 里执行 `kex --win --start` 起服务端，再由 Windows 侧拉起 viewer，全屏显示 XFCE 桌面
+- 第一次打开可能要等 5–10 秒（WSL 冷启动 + X 服务起来）
+- 退出：`Alt+F4` 关闭窗口；`F8` 是 TigerVNC 菜单（里面也有 Exit）
+- 关掉窗口**不会**销毁会话，下次点快捷方式会重连
+- 命令行等价：
+  ```bash
+  kex --win --start          # 只起服务端（后台常驻，监听 5901）
+  kex --win --start-client   # 只连客户端（注意：从 WSL 拉起会随 wsl.exe 退出而被杀）
+  kex --status               # 看状态
+  kex --kill                 # 连服务端一起杀
+  ```
+- 打不开时依次检查：
+  1. `kex --status` 是否 `running`
+  2. `kex --kill` 后重新点快捷方式
+  3. `ls /mnt/wslg` 确认 WSLg 正常
+  4. 看日志 `~/.vnc/*.log`
+  5. 确认 `/etc/sudoers.d/90-winkex` 存在（启动时要把 WSLg 的 X11 socket 目录重挂为可写）
 
 ---
 
